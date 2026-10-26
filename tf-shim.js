@@ -183,5 +183,30 @@
 
   window.addEventListener('error', function (e) { log('[tf] window error', e.message, e.filename + ':' + e.lineno); });
   window.addEventListener('unhandledrejection', function (e) { log('[tf] unhandledrejection', String(e.reason && (e.reason.stack || e.reason))); });
+  /* ---------- ثبت دقیق خطاهای Appwrite در crash.log (فقط وضعیت و نوع خطا؛ محتوای پیام‌ها ثبت نمی‌شود) ---------- */
+  (function () {
+    var isAW = function (u) { try { return /(^|\.)appwrite\.(io|run)$/i.test(new URL(u, location.href).hostname); } catch (e) { return false; } };
+    var pth = function (u) { try { return new URL(u, location.href).pathname; } catch (e) { return ''; } };
+    var of = window.fetch;
+    window.fetch = function (i, init) {
+      var url = typeof i === 'string' ? i : (i && i.url) || '';
+      if (!isAW(url)) return of.apply(this, arguments);
+      var m = (init && init.method) || (i && i.method) || 'GET', p = pth(url);
+      return of.apply(this, arguments).then(function (r) {
+        if (!r.ok) r.clone().text().then(function (t) { var j = {}; try { j = JSON.parse(t); } catch (e) {} log('[tf] appwrite', r.status, m, p, j.type || '', String(j.message || t).slice(0, 200)); }).catch(function () {});
+        return r;
+      }, function (e) { log('[tf] appwrite fetch failed', m, p, String(e && e.message || e)); throw e; });
+    };
+    var xo = XMLHttpRequest.prototype.open, xs = XMLHttpRequest.prototype.send;
+    XMLHttpRequest.prototype.open = function (m, u) { this.__tfAw = isAW(u) ? [m, u] : null; return xo.apply(this, arguments); };
+    XMLHttpRequest.prototype.send = function () {
+      var x = this;
+      if (x.__tfAw) x.addEventListener('loadend', function () {
+        if (x.status < 200 || x.status >= 300) { var j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} log('[tf] appwrite xhr', x.status, x.__tfAw[0], pth(x.__tfAw[1]), j.type || '', String(j.message || '').slice(0, 200)); }
+      });
+      return xs.apply(this, arguments);
+    };
+  })();
+
   log('[tf] shim ready');
 })();
