@@ -1,0 +1,36 @@
+name: Build macOS app
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx electron-builder --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: Make DMG files
+        run: |
+          mkdir -p out
+          for pair in "mac-arm64:arm64"; do
+            dir="${pair%%:*}"; arch="${pair##*:}"
+            if [ -d "dist/$dir/TootFarangi.app" ]; then
+              rm -rf "stage-$arch"; mkdir "stage-$arch"
+              ditto "dist/$dir/TootFarangi.app" "stage-$arch/TootFarangi.app"
+              ln -s /Applications "stage-$arch/Applications"
+              hdiutil create -volname TootFarangi -srcfolder "stage-$arch" -ov -format ULMO "out/TootFarangi-$arch.dmg"
+            fi
+          done
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TootFarangi-mac
+          path: out/*.dmg
+          if-no-files-found: error
+          compression-level: 0
