@@ -44,5 +44,5 @@
 - یک بار در Appwrite Console ← پروژه ← Overview ← Add platform ← Web ← Hostname: `localhost`
   (اگر دامنهٔ github.io خودت را ثبت کرده‌ای، همان را در `appwrite.json` بنویس: `{ "origin": "https://نام.github.io" }`).
 - منوی Help ← **Appwrite: test connection** دلیل دقیق مشکل را نشان می‌دهد.
-- اگر با این‌ها هم وصل نشد: در `appwrite.json` مقدار `relaxWebSecurity` را `true` کن و برنامه را دوباره باز کن.
+- اگر با این‌ها هم وصل نشد: در `appwrite.json` مقدار `relaxWebSecurity` به‌صورت پیش‌فرض true است.
 - فایل SDK بعد از اولین اجرای آنلاین ذخیره می‌شود تا بدون اینترنت هم لود شود.

@@ -293,12 +293,16 @@ function setupProtocol() {
        ۲) سرآیندهای CORS پاسخ برای صفحهٔ tf://app درست می‌شود  ۳) SDK برای حالت آفلاین ذخیره می‌شود
        ۴) منوی Help ← «Appwrite: test connection» دلیل دقیق خطا را نشان می‌دهد. */
 const AWCFG = () => path.join(app.getPath('userData'), 'appwrite.json');
-let AW = { origin: 'https://localhost', relaxWebSecurity: false };
+let AW = { origin: 'https://localhost', relaxWebSecurity: true, v: 2 };
 function normOrigin(o) {
   try { o = String(o || '').trim(); if (!/^https?:\/\//i.test(o)) o = 'https://' + o; return new URL(o).origin; } catch (e) { return 'https://localhost'; }
 }
 function loadAW() {
-  try { Object.assign(AW, JSON.parse(fs.readFileSync(AWCFG(), 'utf8'))); } catch (e) {
+  try {
+    const j = JSON.parse(fs.readFileSync(AWCFG(), 'utf8'));
+    Object.assign(AW, j);
+    if (j.v !== 2) { AW.relaxWebSecurity = true; AW.v = 2; fs.writeFileSync(AWCFG(), JSON.stringify(AW, null, 2)); }
+  } catch (e) {
     try { fs.writeFileSync(AWCFG(), JSON.stringify(AW, null, 2)); } catch (e2) {}
   }
   AW.origin = normOrigin(AW.origin);
