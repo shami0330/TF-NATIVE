@@ -1,0 +1,54 @@
+{
+  "name": "tootfarangi",
+  "productName": "TootFarangi",
+  "version": "1.0.1",
+  "description": "TootFarangi - classroom app",
+  "main": "main.js",
+  "author": "TootFarangi",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.tootfarangi.app",
+    "productName": "TootFarangi",
+    "copyright": "TootFarangi",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "tf-shim.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "afterPack": "build/afterPack.js",
+    "mac": {
+      "category": "public.app-category.education",
+      "icon": "build/icon.icns",
+      "identity": null,
+      "target": [
+        {
+          "target": "dir",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "TootFarangi needs the microphone for recording the board.",
+        "NSCameraUsageDescription": "TootFarangi needs the camera for the board and recordings.",
+        "NSScreenCaptureUsageDescription": "TootFarangi needs screen recording permission to record the board."
+      }
+    }
+  }
+}
