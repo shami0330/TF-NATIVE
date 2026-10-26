@@ -187,6 +187,35 @@ const ops = {
     try { await fsp.unlink(w.tmp); } catch (e) {} return {};
   },
 
+  /* ----- Appwrite: آپلود/دانلود فایل از طریق پردازش اصلی (بدون محدودیت‌های مرورگر) ----- */
+  async awFetch(a) {
+    const u = new URL(a.url);
+    if (!isAWHost(u.hostname)) throw E('NotAllowedError', 'host not allowed');
+    const headers = {};
+    for (const [k, v] of (a.headers || [])) if (!/^(origin|referer|host|content-length|cookie|connection)$/i.test(k)) headers[k] = v;
+    headers['Origin'] = AW.origin; headers['Referer'] = AW.origin + '/';
+    const esc = (s) => String(s).replace(/[\r\n]/g, ' ').replace(/"/g, '%22');
+    let body;
+    if (a.form) {
+      const bd = '----tfform' + Date.now().toString(16) + Math.random().toString(16).slice(2);
+      const parts = [];
+      for (const f of a.form) {
+        if (f.file) {
+          parts.push(Buffer.from('--' + bd + '\r\nContent-Disposition: form-data; name="' + esc(f.name) + '"; filename="' + esc(f.file.name) + '"\r\nContent-Type: ' + (f.file.type || 'application/octet-stream') + '\r\n\r\n'));
+          parts.push(Buffer.from(f.file.data)); parts.push(Buffer.from('\r\n'));
+        } else parts.push(Buffer.from('--' + bd + '\r\nContent-Disposition: form-data; name="' + esc(f.name) + '"\r\n\r\n' + f.value + '\r\n'));
+      }
+      parts.push(Buffer.from('--' + bd + '--\r\n'));
+      body = Buffer.concat(parts);
+      headers['Content-Type'] = 'multipart/form-data; boundary=' + bd;
+    } else if (a.body) body = Buffer.from(a.body);
+    const r = await net.fetch(a.url, { method: a.method || 'GET', headers, body, credentials: 'include' });
+    const buf = Buffer.from(await r.arrayBuffer());
+    const hs = []; r.headers.forEach((v, k) => hs.push([k, v]));
+    if (r.status >= 400) L('appwrite(main) ' + r.status + ' ' + (a.method || 'GET') + ' ' + u.pathname + ' ' + buf.toString('utf8', 0, 200).replace(/\s+/g, ' '));
+    return { status: r.status, statusText: r.statusText, headers: hs, body: buf };
+  },
+
   /* ----- به‌روزرسانی / بازگشت ----- */
   async update(a) {
     const html = a && a.html;

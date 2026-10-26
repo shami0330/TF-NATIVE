@@ -208,5 +208,38 @@
     };
   })();
 
+  /* ---------- Appwrite: آپلود و دانلود فایل از مسیر پوسته (اگر مرورگر درخواست فایل را قطع کند) ---------- */
+  (function () {
+    var isAW = function (u) { try { return /(^|\.)appwrite\.(io|run)$/i.test(new URL(u, location.href).hostname); } catch (e) { return false; } };
+    var prev = window.fetch;
+    window.fetch = function (i, init) {
+      var url = typeof i === 'string' ? i : (i instanceof URL ? i.href : '');
+      if (!url || !isAW(url)) return prev.apply(this, arguments);
+      var body = init && init.body, p = '';
+      try { p = new URL(url).pathname; } catch (e) {}
+      var heavy = body instanceof FormData || body instanceof Blob || body instanceof ArrayBuffer || ArrayBuffer.isView(body) || /\/storage\//.test(p);
+      if (!heavy) return prev.apply(this, arguments);
+      var method = (init && init.method) || 'GET';
+      return (async function () {
+        var hs = []; try { new Headers((init && init.headers) || {}).forEach(function (v, k) { hs.push([k, v]); }); } catch (e) {}
+        var a = { url: url, method: method, headers: hs };
+        if (body instanceof FormData) {
+          a.form = [];
+          var ents = Array.from(body.entries());
+          for (var n = 0; n < ents.length; n++) {
+            var k = ents[n][0], v = ents[n][1];
+            if (v instanceof Blob) a.form.push({ name: k, file: { name: v.name || 'blob', type: v.type || '', data: await v.arrayBuffer() } });
+            else a.form.push({ name: k, value: String(v) });
+          }
+        } else if (body instanceof Blob) a.body = await body.arrayBuffer();
+        else if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) a.body = body;
+        else if (typeof body === 'string') a.body = new TextEncoder().encode(body);
+        var r = await call('awFetch', a);
+        var nb = r.status === 204 || r.status === 205 || r.status === 304 || r.status < 200;
+        return new Response(nb ? null : r.body, { status: r.status, statusText: r.statusText || '', headers: new Headers(r.headers) });
+      })().catch(function (e) { log('[tf] awFetch failed', method, p, String(e && e.message || e)); throw new TypeError('Failed to fetch'); });
+    };
+  })();
+
   log('[tf] shim ready');
 })();
