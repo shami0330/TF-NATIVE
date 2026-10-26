@@ -39,8 +39,7 @@
         {
           "target": "dir",
           "arch": [
-            "arm64",
-            "x64"
+            "arm64"
           ]
         }
       ],
@@ -48,7 +47,12 @@
         "NSMicrophoneUsageDescription": "TootFarangi needs the microphone for recording the board.",
         "NSCameraUsageDescription": "TootFarangi needs the camera for the board and recordings.",
         "NSScreenCaptureUsageDescription": "TootFarangi needs screen recording permission to record the board."
-      }
-    }
+      },
+      "electronLanguages": [
+        "en",
+        "fa"
+      ]
+    },
+    "compression": "maximum"
   }
 }
